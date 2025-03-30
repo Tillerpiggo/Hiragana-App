@@ -67,21 +67,63 @@ export class HiraganaService {
     currentBeat: 0
   };
 
+  // Debug helper to print character stages
+  private static logCharacterStages(): void {
+    console.group('Current Character Stages:');
+    const stageGroups: Record<number, HiraganaCharacter[]> = {};
+    
+    // Group characters by stage
+    this.characters.forEach(char => {
+      if (!stageGroups[char.stage]) {
+        stageGroups[char.stage] = [];
+      }
+      stageGroups[char.stage].push(char);
+    });
+    
+    // Log each stage group
+    Object.keys(stageGroups).sort((a, b) => Number(a) - Number(b)).forEach(stage => {
+      const chars = stageGroups[Number(stage)].map(c => 
+        `${c.character}(${c.romanization})${c.lastCorrect ? '✓' : '✗'}`
+      ).join(', ');
+      console.log(`Stage ${stage}: [${chars}]`);
+    });
+    
+    console.groupEnd();
+  }
+
   // Initialize the system by promoting initial characters
   static initializeSystem(): void {
-    // Promote two random Stage 0 characters to Stage 1
+    console.group('Initializing HiraganaBeats System');
+    console.log('Starting with all characters at Stage 0');
+    
+    // Get stage 0 characters
     const stage0Chars = this.characters.filter(char => char.stage === 0);
+    
     if (stage0Chars.length >= 2) {
-      this.promoteCharacter(stage0Chars[0]);
-      this.promoteCharacter(stage0Chars[1]);
+      // Promote first character to Stage 1
+      const char1 = stage0Chars[0];
+      console.log(`Promoting initial character to Stage 1: ${char1.character}`);
+      this.promoteCharacter(char1);
+      
+      // Promote second character to Stage 2
+      const char2 = stage0Chars[1];
+      console.log(`Promoting initial character to Stage 2: ${char2.character}`);
+      this.promoteCharacter(char2); // First promotion to Stage 1
+      this.promoteCharacter(char2); // Second promotion to Stage 2
     }
+    
+    this.logCharacterStages();
+    console.log('Generating first 8-beat pattern');
     
     // Generate the first pattern
     this.generatePattern();
+    console.groupEnd();
   }
 
   // Generate an 8-beat pattern based on character stages
   static generatePattern(): void {
+    console.group('Generating 8-Beat Pattern');
+    
     // Reset the pattern
     this.currentPattern = {
       characters: Array(8).fill(null),
@@ -101,99 +143,166 @@ export class HiraganaService {
     const stage4Chars = this.characters.filter(char => char.stage === 4);
     const stage5PlusChars = this.characters.filter(char => char.stage >= 5);
     
-    // Assign stage 1 characters to downbeats (0, 4)
-    if (stage1Chars.length > 0) {
-      this.currentPattern.characters[0] = this.getRandomChar(stage1Chars);
-      if (stage1Chars.length > 1) {
-        this.currentPattern.characters[4] = this.getRandomChar(stage1Chars.filter(
-          char => char !== this.currentPattern.characters[0]
-        ));
-      } else {
-        this.currentPattern.characters[4] = this.currentPattern.characters[0];
-      }
-    }
+    console.log(`Available characters by stage:`);
+    console.log(`Stage 1 (${stage1Chars.length}): ${stage1Chars.map(c => c.character).join(', ')}`);
+    console.log(`Stage 2 (${stage2Chars.length}): ${stage2Chars.map(c => c.character).join(', ')}`);
+    console.log(`Stage 3 (${stage3Chars.length}): ${stage3Chars.map(c => c.character).join(', ')}`);
+    console.log(`Stage 4 (${stage4Chars.length}): ${stage4Chars.map(c => c.character).join(', ')}`);
+    console.log(`Stage 5+ (${stage5PlusChars.length}): ${stage5PlusChars.map(c => c.character).join(', ')}`);
     
-    // Assign stage 2 characters to upbeats (2, 6)
-    if (stage2Chars.length > 0) {
-      this.currentPattern.characters[2] = this.getRandomChar(stage2Chars);
-      if (stage2Chars.length > 1) {
-        this.currentPattern.characters[6] = this.getRandomChar(stage2Chars.filter(
-          char => char !== this.currentPattern.characters[2]
-        ));
-      } else {
-        this.currentPattern.characters[6] = this.currentPattern.characters[2];
-      }
-    }
-    
-    // Assign stage 3 characters to off-beats (1, 3, 5, 7)
-    const offBeats = [1, 3, 5, 7];
-    if (stage3Chars.length > 0) {
-      for (const beat of offBeats) {
-        if (stage3Chars.length > 0) {
-          this.currentPattern.characters[beat] = this.getRandomChar(stage3Chars);
-          // Remove the selected character to avoid duplicates
-          stage3Chars.splice(stage3Chars.indexOf(this.currentPattern.characters[beat]!), 1);
+    // Special case: exactly one stage 1 character and one stage 2 character
+    // Create alternating pattern: 1 2 1 2 1 2 1 2
+    if (stage1Chars.length === 1 && stage2Chars.length === 1) {
+      console.log('Special case: Creating alternating pattern (1 2 1 2) with single Stage 1 and Stage 2 characters');
+      
+      const stage1Char = stage1Chars[0];
+      const stage2Char = stage2Chars[0];
+      
+      // Assign alternating pattern
+      this.currentPattern.characters[0] = stage1Char;
+      this.currentPattern.characters[1] = stage2Char;
+      this.currentPattern.characters[2] = stage1Char;
+      this.currentPattern.characters[3] = stage2Char;
+      this.currentPattern.characters[4] = stage1Char;
+      this.currentPattern.characters[5] = stage2Char;
+      this.currentPattern.characters[6] = stage1Char;
+      this.currentPattern.characters[7] = stage2Char;
+      
+      console.log(`Created alternating pattern with ${stage1Char.character}(Stage 1) and ${stage2Char.character}(Stage 2)`);
+    } else {
+      // Assign stage 1 characters to downbeats (0, 4)
+      if (stage1Chars.length > 0) {
+        this.currentPattern.characters[0] = this.getRandomChar(stage1Chars);
+        console.log(`Beat 0 (Downbeat): Assigned Stage 1 character ${this.currentPattern.characters[0]!.character}`);
+        
+        if (stage1Chars.length > 1) {
+          this.currentPattern.characters[4] = this.getRandomChar(stage1Chars.filter(
+            char => char !== this.currentPattern.characters[0]
+          ));
+          console.log(`Beat 4 (Downbeat): Assigned different Stage 1 character ${this.currentPattern.characters[4]!.character}`);
+        } else {
+          this.currentPattern.characters[4] = this.currentPattern.characters[0];
+          console.log(`Beat 4 (Downbeat): Reused Stage 1 character ${this.currentPattern.characters[4]!.character} (only one available)`);
         }
       }
-    }
-    
-    // Stage 4 randomly replaces one Stage 3 position
-    if (stage4Chars.length > 0 && offBeats.some(beat => this.currentPattern.characters[beat] !== null)) {
-      // Find an off-beat that has a Stage 3 character
-      const availableOffBeats = offBeats.filter(beat => this.currentPattern.characters[beat] !== null);
-      if (availableOffBeats.length > 0) {
-        const randomOffBeat = availableOffBeats[Math.floor(Math.random() * availableOffBeats.length)];
-        this.currentPattern.characters[randomOffBeat] = this.getRandomChar(stage4Chars);
+      
+      // Assign stage 2 characters to upbeats (2, 6)
+      if (stage2Chars.length > 0) {
+        this.currentPattern.characters[2] = this.getRandomChar(stage2Chars);
+        console.log(`Beat 2 (Upbeat): Assigned Stage 2 character ${this.currentPattern.characters[2]!.character}`);
+        
+        if (stage2Chars.length > 1) {
+          this.currentPattern.characters[6] = this.getRandomChar(stage2Chars.filter(
+            char => char !== this.currentPattern.characters[2]
+          ));
+          console.log(`Beat 6 (Upbeat): Assigned different Stage 2 character ${this.currentPattern.characters[6]!.character}`);
+        } else {
+          this.currentPattern.characters[6] = this.currentPattern.characters[2];
+          console.log(`Beat 6 (Upbeat): Reused Stage 2 character ${this.currentPattern.characters[6]!.character} (only one available)`);
+        }
       }
-    }
-    
-    // Stage 5+ occasionally replaces any position (probabilistic)
-    if (stage5PlusChars.length > 0) {
+      
+      // Assign stage 3 characters to off-beats (1, 3, 5, 7)
+      // UPDATED: Ensure all offbeats are filled with stage 3 characters
+      const offBeats = [1, 3, 5, 7];
+      if (stage3Chars.length > 0) {
+        // Make a working copy of stage3Chars that we can reuse if needed
+        let workingStage3Chars = [...stage3Chars];
+        
+        for (const beat of offBeats) {
+          // If we've used all stage 3 characters, refill the working copy
+          if (workingStage3Chars.length === 0) {
+            workingStage3Chars = [...stage3Chars];
+            console.log('Reusing Stage 3 characters to fill remaining offbeats');
+          }
+          
+          // Assign a stage 3 character to this offbeat
+          const char = this.getRandomChar(workingStage3Chars);
+          this.currentPattern.characters[beat] = char;
+          console.log(`Beat ${beat} (Off-beat): Assigned Stage 3 character ${char.character}`);
+          
+          // Remove this character from the working copy to avoid immediate repeats
+          workingStage3Chars = workingStage3Chars.filter(c => c !== char);
+        }
+      }
+      
+      // Stage 4 randomly replaces one Stage 3 position
+      if (stage4Chars.length > 0 && offBeats.some(beat => this.currentPattern.characters[beat] !== null)) {
+        // Find an off-beat that has a Stage 3 character
+        const availableOffBeats = offBeats.filter(beat => this.currentPattern.characters[beat] !== null);
+        if (availableOffBeats.length > 0) {
+          const randomOffBeat = availableOffBeats[Math.floor(Math.random() * availableOffBeats.length)];
+          const previousChar = this.currentPattern.characters[randomOffBeat]!.character;
+          this.currentPattern.characters[randomOffBeat] = this.getRandomChar(stage4Chars);
+          console.log(`Beat ${randomOffBeat} (Off-beat): Replaced Stage 3 character ${previousChar} with Stage 4 character ${this.currentPattern.characters[randomOffBeat]!.character}`);
+        }
+      }
+      
+      // Stage 5+ occasionally replaces any position (probabilistic)
+      if (stage5PlusChars.length > 0) {
+        for (let i = 0; i < 8; i++) {
+          // 10% chance to replace with a Stage 5+ character
+          if (Math.random() < 0.1) {
+            const previousChar = this.currentPattern.characters[i]?.character || 'none';
+            this.currentPattern.characters[i] = this.getRandomChar(stage5PlusChars);
+            console.log(`Beat ${i}: Replaced character ${previousChar} with Stage 5+ character ${this.currentPattern.characters[i]!.character} (random chance)`);
+          }
+        }
+      }
+      
+      // Fill in any null positions by extending the previous character
       for (let i = 0; i < 8; i++) {
-        // 10% chance to replace with a Stage 5+ character
-        if (Math.random() < 0.1) {
-          this.currentPattern.characters[i] = this.getRandomChar(stage5PlusChars);
-        }
-      }
-    }
-    
-    // Fill in any null positions by extending the previous character
-    for (let i = 0; i < 8; i++) {
-      if (this.currentPattern.characters[i] === null) {
-        if (i > 0 && this.currentPattern.characters[i-1] !== null) {
-          this.currentPattern.characters[i] = this.currentPattern.characters[i-1];
-        } else if (i === 0) {
-          // If the first position is null, use a Stage 1 or Stage 0 character
-          if (stage1Chars.length > 0) {
-            this.currentPattern.characters[i] = this.getRandomChar(stage1Chars);
-          } else {
-            const stage0Char = this.getRandomChar(this.characters.filter(char => char.stage === 0));
-            if (stage0Char) {
-              this.currentPattern.characters[i] = stage0Char;
+        if (this.currentPattern.characters[i] === null) {
+          if (i > 0 && this.currentPattern.characters[i-1] !== null) {
+            this.currentPattern.characters[i] = this.currentPattern.characters[i-1];
+            console.log(`Beat ${i}: Filled null position by extending previous character ${this.currentPattern.characters[i]!.character}`);
+          } else if (i === 0) {
+            // If the first position is null, use a Stage 1 or Stage 0 character
+            if (stage1Chars.length > 0) {
+              this.currentPattern.characters[i] = this.getRandomChar(stage1Chars);
+              console.log(`Beat ${i}: Filled first position with Stage 1 character ${this.currentPattern.characters[i]!.character}`);
             } else {
-              // Fallback to any character
-              this.currentPattern.characters[i] = this.getRandomChar(this.characters);
+              const stage0Char = this.getRandomChar(this.characters.filter(char => char.stage === 0));
+              if (stage0Char) {
+                this.currentPattern.characters[i] = stage0Char;
+                console.log(`Beat ${i}: Filled first position with Stage 0 character ${this.currentPattern.characters[i]!.character}`);
+              } else {
+                // Fallback to any character
+                this.currentPattern.characters[i] = this.getRandomChar(this.characters);
+                console.log(`Beat ${i}: Filled first position with fallback character ${this.currentPattern.characters[i]!.character}`);
+              }
             }
           }
         }
       }
     }
     
+    // Display final pattern
+    console.log('Final 8-beat pattern:');
+    this.currentPattern.characters.forEach((char, index) => {
+      console.log(`Beat ${index}: ${char!.character}(${char!.romanization}) - Stage ${char!.stage}`);
+    });
+    
     // Reset the current beat
     this.currentPattern.currentBeat = 0;
+    console.groupEnd();
   }
 
   // Get the next character in the pattern
   static getNextCharacter(): HiraganaCharacter {
     if (this.currentPattern.currentBeat >= 8) {
+      console.group('Pattern Complete');
+      console.log('All 8 beats completed. Evaluating pattern and generating new one.');
       // If we've completed the pattern, generate a new one
       this.evaluatePattern();
       this.generatePattern();
+      console.groupEnd();
     }
     
     const character = this.currentPattern.characters[this.currentPattern.currentBeat]!;
-    this.currentPattern.currentBeat++;
+    console.log(`Beat ${this.currentPattern.currentBeat}: Serving ${character.character}(${character.romanization}) - Stage ${character.stage}`);
     
+    this.currentPattern.currentBeat++;
     return character;
   }
 
@@ -207,16 +316,20 @@ export class HiraganaService {
     if (charIndex !== -1) {
       // Update the lastCorrect status
       this.characters[charIndex].lastCorrect = correct;
+      console.log(`Character ${character.character}(${character.romanization}) - Answer ${correct ? 'CORRECT ✓' : 'INCORRECT ✗'}`);
     }
   }
 
   // Evaluate the pattern after completion and promote/demote characters
   private static evaluatePattern(): void {
+    console.group('Evaluating Pattern');
+    
     // Create a results map to track accuracy for each character
     const results = new Map<string, { total: number, correct: number }>();
     
     // Get unique characters in the pattern
     const uniqueChars = [...new Set(this.currentPattern.characters.filter(c => c !== null))];
+    console.log(`Number of unique characters in this pattern: ${uniqueChars.length}`);
     
     // Initialize results for each character
     for (const char of uniqueChars) {
@@ -238,15 +351,22 @@ export class HiraganaService {
     for (const [char, result] of results.entries()) {
       const character = this.characters.find(c => c.character === char);
       if (character) {
+        console.log(`Character ${character.character}(${character.romanization}) - Stage ${character.stage} - Correct: ${result.correct}/${result.total}`);
+        
         if (result.correct === result.total) {
           // Perfect accuracy - promote
+          console.log(`  Perfect accuracy! Promoting to Stage ${character.stage + 1}`);
           this.promoteCharacter(character);
         } else {
           // Any error - demote
+          console.log(`  Errors detected. Demoting to Stage ${character.stage > 1 ? character.stage - 1 : 1}`);
           this.demoteCharacter(character);
         }
       }
     }
+    
+    this.logCharacterStages();
+    console.groupEnd();
   }
 
   // Promote a character to the next stage
@@ -267,8 +387,7 @@ export class HiraganaService {
   private static ensureMinimumStage0(): void {
     const stage0Chars = this.characters.filter(char => char.stage === 0);
     if (stage0Chars.length < 2) {
-      // Introduce new Stage 0 characters or reset some higher stages
-      // For this implementation, we'll keep it simple and just maintain what we have
+      console.log(`Only ${stage0Chars.length} Stage 0 characters available. System should introduce new ones in a real implementation.`);
     }
   }
 
@@ -279,7 +398,11 @@ export class HiraganaService {
       // Promote a random Stage 0 character to Stage 1
       const stage0Chars = this.characters.filter(char => char.stage === 0);
       if (stage0Chars.length > 0) {
-        this.promoteCharacter(this.getRandomChar(stage0Chars));
+        const char = this.getRandomChar(stage0Chars);
+        console.log(`No Stage 1 characters available. Promoting ${char.character} from Stage 0 to Stage 1.`);
+        this.promoteCharacter(char);
+      } else {
+        console.log(`No Stage 0 or Stage 1 characters available. System needs more characters.`);
       }
     }
   }

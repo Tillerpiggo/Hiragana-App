@@ -1,214 +1,74 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { HiraganaService, HiraganaCharacter } from "./utils/hiraganaService";
-import Progress from "./components/Progress";
-import Button from "./components/Button";
+import { Button } from "@/components/ui/button"
+import { motion } from "framer-motion"
+import Link from "next/link"
 
 export default function Home() {
-  // Game state
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [beatDuration, setBeatDuration] = useState(3000); // 3 seconds per character
-  const [timeRemaining, setTimeRemaining] = useState(100);
-  const [currentCharacter, setCurrentCharacter] = useState<HiraganaCharacter | null>(null);
-  const [userInput, setUserInput] = useState("");
-  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
-  const [backgroundColor, setBackgroundColor] = useState("bg-white");
-  
-  // Use refs to track the latest values without triggering re-renders
-  const userInputRef = useRef("");
-  const currentCharacterRef = useRef<HiraganaCharacter | null>(null);
-  
-  // Keep refs in sync with state
-  useEffect(() => {
-    userInputRef.current = userInput;
-  }, [userInput]);
-  
-  useEffect(() => {
-    currentCharacterRef.current = currentCharacter;
-  }, [currentCharacter]);
-  
-  const inputRef = useRef<HTMLInputElement>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // Check the user's answer
-  const checkAnswer = useCallback(() => {
-    // Use the refs to get current values
-    const userInputValue = userInputRef.current;
-    const character = currentCharacterRef.current;
-    
-    if (!character) return;
-    
-    // Compare the current values
-    const userInputClean = userInputValue.trim().toLowerCase();
-    const correctAnswerClean = character.romanization.trim().toLowerCase();
-    const correct = userInputClean === correctAnswerClean;
-    
-    // Report the result to the service
-    HiraganaService.reportResult(character, correct);
-    
-    // Update UI state based on result
-    setIsCorrect(correct);
-    setBackgroundColor(correct ? "bg-green-100" : "bg-red-100");
-    
-    // Reset background color after flash
-    setTimeout(() => {
-      setBackgroundColor("bg-white");
-    }, 300);
-    
-    // Move to next character
-    setTimeout(nextCharacter, 0);
-  }, []);
-  
-  // Get the next character
-  const nextCharacter = useCallback(() => {
-    // Get the next character from the service
-    const character = HiraganaService.getNextCharacter();
-    setCurrentCharacter(character);
-    currentCharacterRef.current = character;
-    
-    // Reset for next beat
-    setUserInput("");
-    userInputRef.current = "";
-    setTimeRemaining(100);
-    setIsCorrect(null);
-    
-    // Focus the input field
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-    
-    // Clear any existing timer
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
-    
-    // Start new timer
-    const interval = 100; // Update every 100ms
-    const steps = beatDuration / interval;
-    let counter = 0;
-    
-    timerRef.current = setInterval(() => {
-      counter++;
-      const newTimeRemaining = 100 - (counter / steps) * 100;
-      setTimeRemaining(Math.max(0, newTimeRemaining));
-      
-      // Time's up
-      if (counter >= steps) {
-        clearInterval(timerRef.current!);
-        checkAnswer();
-      }
-    }, interval);
-  }, [beatDuration, checkAnswer]);
-  
-  // Start the game
-  const startGame = useCallback(() => {
-    // Initialize the learning system
-    HiraganaService.initializeSystem();
-    
-    setIsPlaying(true);
-    nextCharacter();
-  }, [nextCharacter]);
-  
-  // Handle input changes
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value;
-    setUserInput(input);
-    // userInputRef is updated via the useEffect
-  }, []);
-  
-  // Clean up timer on unmount
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, []);
-
-  // Helper function to conditionally join classNames
-  const cn = (...classes: string[]) => {
-    return classes.filter(Boolean).join(' ');
-  };
-
   return (
-    <div className={`flex flex-col items-center justify-center min-h-screen ${backgroundColor} text-black p-4 transition-colors duration-300`}>
-      {!isPlaying ? (
-        <div className="flex flex-col items-center space-y-6 max-w-md text-center">
-          <h1 className="text-4xl font-bold">HiraganaBeats</h1>
-          <p className="text-lg">
-            Learn hiragana through rhythm! Type the romanized pronunciation before the beat ends.
-          </p>
+    <div className="min-h-screen w-full flex flex-col items-center justify-center relative overflow-hidden p-4 bg-gray-50">
+      {/* Simple, subtle background pattern */}
+      <div className="absolute inset-0 -z-10 opacity-10">
+        <div className="absolute inset-0 bg-grid-slate-400/[0.2] bg-[size:20px_20px]" />
+      </div>
 
-          <div className="space-y-4 w-full">
-            <div className="flex items-center justify-between">
-              <span>Beat Duration:</span>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setBeatDuration((prev) => Math.min(prev + 500, 5000))}
-                >
-                  Slower
-                </Button>
-                <span>{beatDuration / 1000}s</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setBeatDuration((prev) => Math.max(prev - 500, 1500))}
-                >
-                  Faster
-                </Button>
+      {/* Content */}
+      <div className="w-full max-w-3xl z-10 flex flex-col items-center">
+        {/* Simple, bold title */}
+        <motion.div
+          className="mb-16 w-full"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <h1 className="text-6xl md:text-7xl lg:text-8xl font-extrabold text-center text-indigo-700">
+            Learn with Tempo
+          </h1>
+        </motion.div>
+
+        {/* Side-by-side buttons with simpler colors */}
+        <div className="flex flex-col md:flex-row gap-6 md:gap-10 w-full">
+          <Link href="/hiragana" className="w-full">
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="h-full"
+            >
+              <div className="w-full h-40 md:h-52 text-4xl font-bold rounded-xl bg-purple-600 hover:bg-purple-700 text-white shadow-md border-none inline-flex items-center justify-center">
+                <div className="flex flex-col items-center">
+                  <span className="text-7xl mb-2">ひ</span>
+                  <span>Hiragana</span>
+                </div>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </Link>
 
-          <Button onClick={startGame} className="w-full py-6 text-lg">
-            Start Learning
-          </Button>
+          <Link href="/katakana" className="w-full">
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ 
+                opacity: 1, 
+                y: 0,
+                transition: { delay: 0.1 }
+              }}
+              className="h-full"
+            >
+              <div className="w-full h-40 md:h-52 text-4xl font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md border-none inline-flex items-center justify-center">
+                <div className="flex flex-col items-center">
+                  <span className="text-7xl mb-2">カ</span>
+                  <span>Katakana</span>
+                </div>
+              </div>
+            </motion.div>
+          </Link>
         </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center w-full max-w-md">
-          {/* Rhythm indicator */}
-          <Progress value={timeRemaining} className="w-full h-2 mb-8" />
-
-          {/* Character display */}
-          <div className="text-9xl font-bold mb-8">
-            {currentCharacter?.character}
-          </div>
-          
-          {/* Show hint for stage 1 characters that were incorrect last time */}
-          {currentCharacter && 
-           currentCharacter.stage === 1 && 
-           !currentCharacter.lastCorrect && (
-            <div className="text-lg text-gray-500 mb-4">
-              {"(" + currentCharacter.romanization + ")"}
-            </div>
-          )}
-
-          {/* Input field */}
-          <div className="w-full relative">
-            <input
-              ref={inputRef}
-              type="text"
-              value={userInput}
-              onChange={handleInputChange}
-              className={cn(
-                "w-full text-center text-3xl py-4 border-b-2 outline-none transition-colors",
-                isCorrect === null
-                  ? "border-gray-300"
-                  : isCorrect
-                    ? "border-green-500 bg-green-50"
-                    : "border-red-500 bg-red-50",
-              )}
-              placeholder="Type romanization..."
-              autoComplete="off"
-              autoCapitalize="off"
-              spellCheck="false"
-            />
-          </div>
-        </div>
-      )}
+      </div>
     </div>
-  );
+  )
 }
