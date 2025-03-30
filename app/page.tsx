@@ -39,17 +39,10 @@ export default function Home() {
     const userInputValue = userInputRef.current;
     const romanizationValue = currentRomanizationRef.current;
     
-    console.log("Checking answer with:", {
-      userInput: userInputValue,
-      romanization: romanizationValue
-    });
-    
     // Compare the current values
     const userInputClean = userInputValue.trim().toLowerCase();
     const correctAnswerClean = romanizationValue.trim().toLowerCase();
     const correct = userInputClean === correctAnswerClean;
-    
-    console.log("Answer is correct:", correct);
     
     // Update UI state based on result
     setIsCorrect(correct);
@@ -182,13 +175,8 @@ export default function Home() {
           {/* Rhythm indicator */}
           <Progress value={timeRemaining} className="w-full h-2 mb-8" />
 
-          {/* Character display */}
-          <div
-            className={cn(
-              "text-9xl font-bold mb-8 transition-transform duration-300 transform",
-              timeRemaining < 30 ? "scale-110" : "",
-            )}
-          >
+          {/* Character display - simplified without pulsing */}
+          <div className="text-9xl font-bold mb-8">
             {currentCharacter}
           </div>
 
