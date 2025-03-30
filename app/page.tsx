@@ -16,9 +16,6 @@ export default function Home() {
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [backgroundColor, setBackgroundColor] = useState("bg-white");
-  const [isReviewMode, setIsReviewMode] = useState(false);
-  const [lastWrongCharacter, setLastWrongCharacter] = useState("");
-  const [lastWrongRomanization, setLastWrongRomanization] = useState("");
   
   const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -34,23 +31,13 @@ export default function Home() {
   
   // Get the next character
   const nextCharacter = () => {
-    // If we're coming from a wrong answer and not already in review mode,
-    // use the next beat to review the wrong character
-    if (isCorrect === false && !isReviewMode) {
-      setIsReviewMode(true);
-      setLastWrongCharacter(currentCharacter);
-      setLastWrongRomanization(currentRomanization);
-    } else {
-      // Either we're already in review mode or the answer was correct
-      // Reset review mode and get a new random character
-      setIsReviewMode(false);
-      const { character, romanization } = HiraganaService.getRandomHiragana();
-      setCurrentCharacter(character);
-      setCurrentRomanization(romanization);
-    }
+    // Get a new random character
+    const { character, romanization } = HiraganaService.getRandomHiragana();
+    setCurrentCharacter(character);
+    setCurrentRomanization(romanization);
     
     // Reset for next beat
-    setUserInput("");
+    // setUserInput("");
     setTimeRemaining(100);
     setShowFeedback(false);
     
@@ -78,27 +65,22 @@ export default function Home() {
   
   // Check the user's answer
   const checkAnswer = () => {
-    // If we're in review mode, just move to the next character
-    // No need to check the answer during review
-    if (isReviewMode) {
-      setIsCorrect(null);
-      nextCharacter();
-      return;
-    }
+    // Store current values in local variables to ensure they don't get cleared
+    // before the comparison happens
+    const currentInputValue = userInput;
+    const currentRomanizationValue = currentRomanization;
     
-    // Normal answer checking
-    const userInputClean = userInput.trim().toLowerCase();
-    const correctAnswerClean = currentRomanization.trim().toLowerCase();
+    // Improved comparison with strict equality check
+    const userInputClean = currentInputValue.trim().toLowerCase();
+    const correctAnswerClean = currentRomanizationValue.trim().toLowerCase();
     const correct = userInputClean === correctAnswerClean;
     
+    // Set the correct state before moving to the next character
     setIsCorrect(correct);
     setShowFeedback(true);
     
-    // Flash background color
+    // Flash background color based on correctness
     setBackgroundColor(correct ? "bg-green-100" : "bg-red-100");
-    
-    // Start next character immediately
-    nextCharacter();
     
     // Reset background color after a brief flash
     setTimeout(() => {
@@ -111,15 +93,17 @@ export default function Home() {
         setShowFeedback(false);
       }, 800);
     }
+    
+    // Move to next character with slight delay to ensure state updates
+    setTimeout(() => {
+      nextCharacter();
+    }, 0);
   };
   
   // Handle input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value;
     setUserInput(input);
-    
-    // Remove auto-check functionality to maintain constant rhythm
-    // Let the timer determine when to check the answer
   };
   
   // Clean up timer on unmount
@@ -184,42 +168,32 @@ export default function Home() {
               timeRemaining < 30 ? "scale-110" : "",
             )}
           >
-            {isReviewMode ? lastWrongCharacter : currentCharacter}
+            {currentCharacter}
           </div>
 
-          {/* Show romanization during review mode */}
-          {isReviewMode && (
-            <div className="text-4xl mb-6 text-red-600 font-medium">
-              {lastWrongRomanization}
-            </div>
-          )}
-
-          {/* Input field - disable during review mode */}
+          {/* Input field */}
           <div className="w-full relative">
             <input
               ref={inputRef}
               type="text"
               value={userInput}
               onChange={handleInputChange}
-              disabled={isReviewMode}
               className={cn(
                 "w-full text-center text-3xl py-4 border-b-2 outline-none transition-colors",
-                isReviewMode 
-                  ? "border-red-300 bg-red-50" 
-                  : isCorrect === null
-                    ? "border-gray-300"
-                    : isCorrect
-                      ? "border-green-500 bg-green-50"
-                      : "border-red-500 bg-red-50",
+                isCorrect === null
+                  ? "border-gray-300"
+                  : isCorrect
+                    ? "border-green-500 bg-green-50"
+                    : "border-red-500 bg-red-50",
               )}
-              placeholder={isReviewMode ? "Review..." : "Type romanization..."}
+              placeholder="Type romanization..."
               autoComplete="off"
               autoCapitalize="off"
               spellCheck="false"
             />
 
-            {/* Feedback area - only show for non-review mode */}
-            {showFeedback && !isReviewMode && (
+            {/* Feedback area */}
+            {showFeedback && (
               <div
                 className={cn(
                   "absolute w-full text-center -bottom-10 text-lg font-medium transition-opacity duration-200",
