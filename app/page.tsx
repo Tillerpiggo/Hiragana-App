@@ -1,103 +1,191 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { HiraganaService } from "./utils/hiraganaData";
+import Progress from "./components/Progress";
+import Button from "./components/Button";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  // Game state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [beatDuration, setBeatDuration] = useState(3000); // 3 seconds per character
+  const [timeRemaining, setTimeRemaining] = useState(100);
+  const [currentCharacter, setCurrentCharacter] = useState("");
+  const [currentRomanization, setCurrentRomanization] = useState("");
+  const [userInput, setUserInput] = useState("");
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [backgroundColor, setBackgroundColor] = useState("bg-white");
+  
+  const inputRef = useRef<HTMLInputElement>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Start the game
+  const startGame = () => {
+    setIsPlaying(true);
+    nextCharacter();
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+  
+  // Get the next character
+  const nextCharacter = () => {
+    const { character, romanization } = HiraganaService.getRandomHiragana();
+    setCurrentCharacter(character);
+    setCurrentRomanization(romanization);
+    setUserInput("");
+    setIsCorrect(null);
+    setTimeRemaining(100);
+    setShowFeedback(false);
+    
+    // Start the timer
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    
+    const interval = 100; // Update every 100ms
+    const steps = beatDuration / interval;
+    let counter = 0;
+    
+    timerRef.current = setInterval(() => {
+      counter++;
+      const newTimeRemaining = 100 - (counter / steps) * 100;
+      setTimeRemaining(Math.max(0, newTimeRemaining));
+      
+      // Time's up
+      if (counter >= steps) {
+        clearInterval(timerRef.current!);
+        checkAnswer();
+      }
+    }, interval);
+  };
+  
+  // Check the user's answer
+  const checkAnswer = () => {
+    const correct = userInput.trim().toLowerCase() === currentRomanization.toLowerCase();
+    setIsCorrect(correct);
+    setShowFeedback(true);
+    
+    // Flash background color based on result
+    setBackgroundColor(correct ? "bg-green-100" : "bg-red-100");
+    setTimeout(() => {
+      setBackgroundColor("bg-white");
+      setTimeout(() => {
+        nextCharacter();
+      }, 300); // Brief pause before next character
+    }, 500); // Flash duration
+  };
+  
+  // Handle input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value;
+    setUserInput(input);
+    
+    // Remove auto-check functionality to maintain constant rhythm
+    // Let the timer determine when to check the answer
+  };
+  
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // Helper function to conditionally join classNames
+  const cn = (...classes: string[]) => {
+    return classes.filter(Boolean).join(' ');
+  };
+
+  return (
+    <div className={`flex flex-col items-center justify-center min-h-screen ${backgroundColor} text-black p-4 transition-colors duration-300`}>
+      {!isPlaying ? (
+        <div className="flex flex-col items-center space-y-6 max-w-md text-center">
+          <h1 className="text-4xl font-bold">HiraganaBeats</h1>
+          <p className="text-lg">
+            Learn hiragana through rhythm! Type the romanized pronunciation before the beat ends.
+          </p>
+
+          <div className="space-y-4 w-full">
+            <div className="flex items-center justify-between">
+              <span>Beat Duration:</span>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setBeatDuration((prev) => Math.min(prev + 500, 5000))}
+                >
+                  Slower
+                </Button>
+                <span>{beatDuration / 1000}s</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setBeatDuration((prev) => Math.max(prev - 500, 1500))}
+                >
+                  Faster
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <Button onClick={startGame} className="w-full py-6 text-lg">
+            Start Learning
+          </Button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      ) : (
+        <div className="flex flex-col items-center justify-center w-full max-w-md">
+          {/* Rhythm indicator */}
+          <Progress value={timeRemaining} className="w-full h-2 mb-8" />
+
+          {/* Character display */}
+          <div
+            className={cn(
+              "text-9xl font-bold mb-8 transition-transform duration-300 transform",
+              timeRemaining < 30 ? "scale-110" : "",
+            )}
+          >
+            {currentCharacter}
+          </div>
+
+          {/* Input field */}
+          <div className="w-full relative">
+            <input
+              ref={inputRef}
+              type="text"
+              value={userInput}
+              onChange={handleInputChange}
+              className={cn(
+                "w-full text-center text-3xl py-4 border-b-2 outline-none transition-colors",
+                isCorrect === null
+                  ? "border-gray-300"
+                  : isCorrect
+                    ? "border-green-500 bg-green-50"
+                    : "border-red-500 bg-red-50",
+              )}
+              placeholder="Type romanization..."
+              autoComplete="off"
+              autoCapitalize="off"
+              spellCheck="false"
+            />
+
+            {/* Feedback area */}
+            {showFeedback && (
+              <div
+                className={cn(
+                  "absolute w-full text-center -bottom-10 text-lg font-medium transition-opacity duration-200",
+                  isCorrect ? "text-green-600" : "text-red-600",
+                )}
+              >
+                {isCorrect ? "Correct!" : currentRomanization}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
