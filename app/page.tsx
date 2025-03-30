@@ -26,8 +26,8 @@ export default function Home() {
           </h1>
         </motion.div>
 
-        {/* Side-by-side buttons with simpler colors */}
-        <div className="flex flex-col md:flex-row gap-6 md:gap-10 w-full">
+        {/* Three language options */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
           <Link href="/hiragana" className="w-full">
             <motion.div
               whileHover={{ scale: 1.02 }}
@@ -63,6 +63,28 @@ export default function Home() {
                 <div className="flex flex-col items-center">
                   <span className="text-7xl mb-2">カ</span>
                   <span>Katakana</span>
+                </div>
+              </div>
+            </motion.div>
+          </Link>
+
+          <Link href="/russian" className="w-full">
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ 
+                opacity: 1, 
+                y: 0,
+                transition: { delay: 0.2 }
+              }}
+              className="h-full"
+            >
+              <div className="w-full h-40 md:h-52 text-4xl font-bold rounded-xl bg-red-600 hover:bg-red-700 text-white shadow-md border-none inline-flex items-center justify-center">
+                <div className="flex flex-col items-center">
+                  <span className="text-7xl mb-2">Б</span>
+                  <span>Russian</span>
                 </div>
               </div>
             </motion.div>

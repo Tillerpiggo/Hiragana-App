@@ -1,5 +1,5 @@
 // Character data structure with learning information
-export interface HiraganaCharacter {
+export interface RussianCharacter {
   character: string;
   romanization: string;
   stage: number;
@@ -8,60 +8,47 @@ export interface HiraganaCharacter {
 
 // Beat pattern management
 export interface BeatPattern {
-  characters: (HiraganaCharacter | null)[];
+  characters: (RussianCharacter | null)[];
   currentBeat: number;
   // Track which character is eligible for promotion from each stage
-  promotionCandidates: {[stage: number]: HiraganaCharacter | null};
+  promotionCandidates: {[stage: number]: RussianCharacter | null};
 }
 
-export class HiraganaService {
-  private static characters: HiraganaCharacter[] = [
-    { character: 'あ', romanization: 'a', stage: 0, lastCorrect: false },
-    { character: 'い', romanization: 'i', stage: 0, lastCorrect: false },
-    { character: 'う', romanization: 'u', stage: 0, lastCorrect: false },
-    { character: 'え', romanization: 'e', stage: 0, lastCorrect: false },
-    { character: 'お', romanization: 'o', stage: 0, lastCorrect: false },
-    { character: 'か', romanization: 'ka', stage: 0, lastCorrect: false },
-    { character: 'き', romanization: 'ki', stage: 0, lastCorrect: false },
-    { character: 'く', romanization: 'ku', stage: 0, lastCorrect: false },
-    { character: 'け', romanization: 'ke', stage: 0, lastCorrect: false },
-    { character: 'こ', romanization: 'ko', stage: 0, lastCorrect: false },
-    { character: 'さ', romanization: 'sa', stage: 0, lastCorrect: false },
-    { character: 'し', romanization: 'shi', stage: 0, lastCorrect: false },
-    { character: 'す', romanization: 'su', stage: 0, lastCorrect: false },
-    { character: 'せ', romanization: 'se', stage: 0, lastCorrect: false },
-    { character: 'そ', romanization: 'so', stage: 0, lastCorrect: false },
-    { character: 'た', romanization: 'ta', stage: 0, lastCorrect: false },
-    { character: 'ち', romanization: 'chi', stage: 0, lastCorrect: false },
-    { character: 'つ', romanization: 'tsu', stage: 0, lastCorrect: false },
-    { character: 'て', romanization: 'te', stage: 0, lastCorrect: false },
-    { character: 'と', romanization: 'to', stage: 0, lastCorrect: false },
-    { character: 'な', romanization: 'na', stage: 0, lastCorrect: false },
-    { character: 'に', romanization: 'ni', stage: 0, lastCorrect: false },
-    { character: 'ぬ', romanization: 'nu', stage: 0, lastCorrect: false },
-    { character: 'ね', romanization: 'ne', stage: 0, lastCorrect: false },
-    { character: 'の', romanization: 'no', stage: 0, lastCorrect: false },
-    { character: 'は', romanization: 'ha', stage: 0, lastCorrect: false },
-    { character: 'ひ', romanization: 'hi', stage: 0, lastCorrect: false },
-    { character: 'ふ', romanization: 'fu', stage: 0, lastCorrect: false },
-    { character: 'へ', romanization: 'he', stage: 0, lastCorrect: false },
-    { character: 'ほ', romanization: 'ho', stage: 0, lastCorrect: false },
-    { character: 'ま', romanization: 'ma', stage: 0, lastCorrect: false },
-    { character: 'み', romanization: 'mi', stage: 0, lastCorrect: false },
-    { character: 'む', romanization: 'mu', stage: 0, lastCorrect: false },
-    { character: 'め', romanization: 'me', stage: 0, lastCorrect: false },
-    { character: 'も', romanization: 'mo', stage: 0, lastCorrect: false },
-    { character: 'や', romanization: 'ya', stage: 0, lastCorrect: false },
-    { character: 'ゆ', romanization: 'yu', stage: 0, lastCorrect: false },
-    { character: 'よ', romanization: 'yo', stage: 0, lastCorrect: false },
-    { character: 'ら', romanization: 'ra', stage: 0, lastCorrect: false },
-    { character: 'り', romanization: 'ri', stage: 0, lastCorrect: false },
-    { character: 'る', romanization: 'ru', stage: 0, lastCorrect: false },
-    { character: 'れ', romanization: 're', stage: 0, lastCorrect: false },
-    { character: 'ろ', romanization: 'ro', stage: 0, lastCorrect: false },
-    { character: 'わ', romanization: 'wa', stage: 0, lastCorrect: false },
-    { character: 'を', romanization: 'wo', stage: 0, lastCorrect: false },
-    { character: 'ん', romanization: 'n', stage: 0, lastCorrect: false }
+export class RussianService {
+  private static characters: RussianCharacter[] = [
+    { character: 'А', romanization: 'a', stage: 0, lastCorrect: false },
+    { character: 'Б', romanization: 'b', stage: 0, lastCorrect: false },
+    { character: 'В', romanization: 'v', stage: 0, lastCorrect: false },
+    { character: 'Г', romanization: 'g', stage: 0, lastCorrect: false },
+    { character: 'Д', romanization: 'd', stage: 0, lastCorrect: false },
+    { character: 'Е', romanization: 'ye', stage: 0, lastCorrect: false },
+    { character: 'Ё', romanization: 'yo', stage: 0, lastCorrect: false },
+    { character: 'Ж', romanization: 'zh', stage: 0, lastCorrect: false },
+    { character: 'З', romanization: 'z', stage: 0, lastCorrect: false },
+    { character: 'И', romanization: 'i', stage: 0, lastCorrect: false },
+    { character: 'Й', romanization: 'y', stage: 0, lastCorrect: false },
+    { character: 'К', romanization: 'k', stage: 0, lastCorrect: false },
+    { character: 'Л', romanization: 'l', stage: 0, lastCorrect: false },
+    { character: 'М', romanization: 'm', stage: 0, lastCorrect: false },
+    { character: 'Н', romanization: 'n', stage: 0, lastCorrect: false },
+    { character: 'О', romanization: 'o', stage: 0, lastCorrect: false },
+    { character: 'П', romanization: 'p', stage: 0, lastCorrect: false },
+    { character: 'Р', romanization: 'r', stage: 0, lastCorrect: false },
+    { character: 'С', romanization: 's', stage: 0, lastCorrect: false },
+    { character: 'Т', romanization: 't', stage: 0, lastCorrect: false },
+    { character: 'У', romanization: 'u', stage: 0, lastCorrect: false },
+    { character: 'Ф', romanization: 'f', stage: 0, lastCorrect: false },
+    { character: 'Х', romanization: 'kh', stage: 0, lastCorrect: false },
+    { character: 'Ц', romanization: 'ts', stage: 0, lastCorrect: false },
+    { character: 'Ч', romanization: 'ch', stage: 0, lastCorrect: false },
+    { character: 'Ш', romanization: 'sh', stage: 0, lastCorrect: false },
+    { character: 'Щ', romanization: 'shch', stage: 0, lastCorrect: false },
+    { character: 'Ъ', romanization: 'hard sign', stage: 0, lastCorrect: false },
+    { character: 'Ы', romanization: 'y', stage: 0, lastCorrect: false },
+    { character: 'Ь', romanization: 'soft sign', stage: 0, lastCorrect: false },
+    { character: 'Э', romanization: 'e', stage: 0, lastCorrect: false },
+    { character: 'Ю', romanization: 'yu', stage: 0, lastCorrect: false },
+    { character: 'Я', romanization: 'ya', stage: 0, lastCorrect: false }
   ];
 
   private static currentPattern: BeatPattern = {
@@ -70,33 +57,9 @@ export class HiraganaService {
     promotionCandidates: {}
   };
 
-  // Debug helper to print character stages
-  private static logCharacterStages(): void {
-    console.group('Current Character Stages:');
-    const stageGroups: Record<number, HiraganaCharacter[]> = {};
-    
-    // Group characters by stage
-    this.characters.forEach(char => {
-      if (!stageGroups[char.stage]) {
-        stageGroups[char.stage] = [];
-      }
-      stageGroups[char.stage].push(char);
-    });
-    
-    // Log each stage group
-    Object.keys(stageGroups).sort((a, b) => Number(a) - Number(b)).forEach(stage => {
-      const chars = stageGroups[Number(stage)].map(c => 
-        `${c.character}(${c.romanization})${c.lastCorrect ? '✓' : '✗'}`
-      ).join(', ');
-      console.log(`Stage ${stage}: [${chars}]`);
-    });
-    
-    console.groupEnd();
-  }
-
   // Initialize the system with one character at stage 1 and one at stage 2
   static initializeSystem(): void {
-    console.group('Initializing HiraganaBeats System');
+    console.group('Initializing RussianBeats System');
     console.log('Starting with all characters at Stage 0');
     
     // Get stage 0 characters
@@ -120,6 +83,34 @@ export class HiraganaService {
     
     // Generate the first pattern
     this.generatePattern();
+    console.groupEnd();
+  }
+
+  // The rest of the implementation is identical to HiraganaService
+  // Just copy the methods from HiraganaService, but replace "Hiragana" with "Russian"
+  // ... other methods (generatePattern, evaluatePattern, etc.) ...
+
+  // Debug helper to print character stages
+  private static logCharacterStages(): void {
+    console.group('Current Character Stages:');
+    const stageGroups: Record<number, RussianCharacter[]> = {};
+    
+    // Group characters by stage
+    this.characters.forEach(char => {
+      if (!stageGroups[char.stage]) {
+        stageGroups[char.stage] = [];
+      }
+      stageGroups[char.stage].push(char);
+    });
+    
+    // Log each stage group
+    Object.keys(stageGroups).sort((a, b) => Number(a) - Number(b)).forEach(stage => {
+      const chars = stageGroups[Number(stage)].map(c => 
+        `${c.character}(${c.romanization})${c.lastCorrect ? '✓' : '✗'}`
+      ).join(', ');
+      console.log(`Stage ${stage}: [${chars}]`);
+    });
+    
     console.groupEnd();
   }
 
@@ -357,7 +348,11 @@ export class HiraganaService {
     // Display final pattern
     console.log('Final 16-beat pattern:');
     this.currentPattern.characters.forEach((char, index) => {
-      console.log(`Beat ${index}: ${char!.character}(${char!.romanization}) - Stage ${char!.stage}`);
+      if (char) {
+        console.log(`Beat ${index}: ${char.character}(${char.romanization}) - Stage ${char.stage}`);
+      } else {
+        console.log(`Beat ${index}: NULL CHARACTER - PATTERN GENERATION ERROR`);
+      }
     });
     
     console.log('Promotion candidates for this pattern:');
@@ -373,7 +368,7 @@ export class HiraganaService {
   }
 
   // Get the next character in the pattern
-  static getNextCharacter(): HiraganaCharacter {
+  static getNextCharacter(): RussianCharacter {
     if (this.currentPattern.currentBeat >= 16) {
       console.group('Pattern Complete');
       console.log('All 16 beats completed. Evaluating pattern and generating new one.');
@@ -391,7 +386,7 @@ export class HiraganaService {
   }
 
   // Report the result for the current character
-  static reportResult(character: HiraganaCharacter, correct: boolean): void {
+  static reportResult(character: RussianCharacter, correct: boolean): void {
     // Find the character in our array
     const charIndex = this.characters.findIndex(
       c => c.character === character.character
@@ -446,7 +441,7 @@ export class HiraganaService {
     }
     
     // Collect perfect score characters by stage
-    const perfectChars: Map<number, HiraganaCharacter[]> = new Map();
+    const perfectChars: Map<number, RussianCharacter[]> = new Map();
     for (const [char, result] of results.entries()) {
       if (result.correct === result.total) {
         const character = this.characters.find(c => c.character === char);
@@ -524,12 +519,12 @@ export class HiraganaService {
   }
 
   // Promote a character to the next stage
-  private static promoteCharacter(character: HiraganaCharacter): void {
+  private static promoteCharacter(character: RussianCharacter): void {
     character.stage++;
   }
 
   // Demote a character, but not below stage 1
-  private static demoteCharacter(character: HiraganaCharacter): void {
+  private static demoteCharacter(character: RussianCharacter): void {
     if (character.stage > 1) {
       character.stage--;
     } else if (character.stage === 0) {
@@ -562,7 +557,7 @@ export class HiraganaService {
   }
 
   // Helper to get a random character from an array
-  private static getRandomChar(characters: HiraganaCharacter[]): HiraganaCharacter {
+  private static getRandomChar(characters: RussianCharacter[]): RussianCharacter {
     if (characters.length === 0) return null!;
     return characters[Math.floor(Math.random() * characters.length)];
   }
