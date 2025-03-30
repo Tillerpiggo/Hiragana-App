@@ -6,16 +6,16 @@ import Progress from "../components/Progress";
 import Button from "../components/Button";
 
 export default function HiraganaPage() {
-  // Game state
-  const [isPlaying, setIsPlaying] = useState(false);
+  // Game state - start with isPlaying true to skip intro screen
+  const [isPlaying, setIsPlaying] = useState(true);
   const [timeRemaining, setTimeRemaining] = useState(100);
   const [currentCharacter, setCurrentCharacter] = useState<HiraganaCharacter | null>(null);
   const [userInput, setUserInput] = useState("");
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [backgroundColor, setBackgroundColor] = useState("bg-white");
   
-  // Fixed beat duration of 0.8 seconds (800ms)
-  const beatDuration = 800;
+  // Changed back to 1 second (1000ms)
+  const beatDuration = 1000;
   
   // Use refs to track the latest values without triggering re-renders
   const userInputRef = useRef("");
@@ -103,13 +103,23 @@ export default function HiraganaPage() {
     }, interval);
   }, [checkAnswer]);
   
-  // Start the game
-  const startGame = useCallback(() => {
+  // Initialize the game automatically on page load
+  useEffect(() => {
     // Initialize the learning system
     HiraganaService.initializeSystem();
-    
-    setIsPlaying(true);
     nextCharacter();
+    
+    // Focus the input field
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+    
+    // Clean up timer on unmount
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
   }, [nextCharacter]);
   
   // Handle input changes
@@ -117,15 +127,6 @@ export default function HiraganaPage() {
     const input = e.target.value;
     setUserInput(input);
     // userInputRef is updated via the useEffect
-  }, []);
-  
-  // Clean up timer on unmount
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
   }, []);
 
   // Helper function to conditionally join classNames
@@ -135,59 +136,46 @@ export default function HiraganaPage() {
 
   return (
     <div className={`flex flex-col items-center justify-center min-h-screen ${backgroundColor} text-black p-4 transition-colors duration-300`}>
-      {!isPlaying ? (
-        <div className="flex flex-col items-center space-y-6 max-w-md text-center">
-          <h1 className="text-4xl font-bold">HiraganaBeats</h1>
-          <p className="text-lg">
-            Learn hiragana through rhythm! Type the romanized pronunciation before the beat ends.
-          </p>
+      <div className="flex flex-col items-center justify-center w-full max-w-md">
+        {/* Rhythm indicator */}
+        <Progress value={timeRemaining} className="w-full h-2 mb-8" />
 
-          <Button onClick={startGame} className="w-full py-6 text-lg">
-            Start Learning
-          </Button>
+        {/* Character display */}
+        <div className="text-9xl font-bold mb-8">
+          {currentCharacter?.character}
         </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center w-full max-w-md">
-          {/* Rhythm indicator */}
-          <Progress value={timeRemaining} className="w-full h-2 mb-8" />
-
-          {/* Character display */}
-          <div className="text-9xl font-bold mb-8">
-            {currentCharacter?.character}
+        
+        {/* Show hint for stage 1 characters that were incorrect last time */}
+        {currentCharacter && 
+          currentCharacter.stage === 1 && 
+          !currentCharacter.lastCorrect && (
+          <div className="text-lg text-gray-500 mb-4">
+            {"(" + currentCharacter.romanization + ")"}
           </div>
-          
-          {/* Show hint for stage 1 characters that were incorrect last time */}
-          {currentCharacter && 
-           currentCharacter.stage === 1 && 
-           !currentCharacter.lastCorrect && (
-            <div className="text-lg text-gray-500 mb-4">
-              {"(" + currentCharacter.romanization + ")"}
-            </div>
-          )}
+        )}
 
-          {/* Input field */}
-          <div className="w-full relative">
-            <input
-              ref={inputRef}
-              type="text"
-              value={userInput}
-              onChange={handleInputChange}
-              className={cn(
-                "w-full text-center text-3xl py-4 border-b-2 outline-none transition-colors",
-                isCorrect === null
-                  ? "border-gray-300"
-                  : isCorrect
-                    ? "border-green-500 bg-green-50"
-                    : "border-red-500 bg-red-50",
-              )}
-              placeholder="Type romanization..."
-              autoComplete="off"
-              autoCapitalize="off"
-              spellCheck="false"
-            />
-          </div>
+        {/* Input field */}
+        <div className="w-full relative">
+          <input
+            ref={inputRef}
+            type="text"
+            value={userInput}
+            onChange={handleInputChange}
+            className={cn(
+              "w-full text-center text-3xl py-4 border-b-2 outline-none transition-colors",
+              isCorrect === null
+                ? "border-gray-300"
+                : isCorrect
+                  ? "border-green-500 bg-green-50"
+                  : "border-red-500 bg-red-50",
+            )}
+            placeholder="Type romanization..."
+            autoComplete="off"
+            autoCapitalize="off"
+            spellCheck="false"
+          />
         </div>
-      )}
+      </div>
     </div>
   );
 } 
