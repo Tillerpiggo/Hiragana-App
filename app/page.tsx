@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { HiraganaService } from "./utils/hiraganaData";
+import { HiraganaService, HiraganaCharacter } from "./utils/hiraganaService";
 import Progress from "./components/Progress";
 import Button from "./components/Button";
 
@@ -10,16 +10,14 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [beatDuration, setBeatDuration] = useState(3000); // 3 seconds per character
   const [timeRemaining, setTimeRemaining] = useState(100);
-  const [currentCharacter, setCurrentCharacter] = useState("");
-  const [currentRomanization, setCurrentRomanization] = useState("");
+  const [currentCharacter, setCurrentCharacter] = useState<HiraganaCharacter | null>(null);
   const [userInput, setUserInput] = useState("");
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
-  const [showFeedback, setShowFeedback] = useState(false);
   const [backgroundColor, setBackgroundColor] = useState("bg-white");
   
   // Use refs to track the latest values without triggering re-renders
   const userInputRef = useRef("");
-  const currentRomanizationRef = useRef("");
+  const currentCharacterRef = useRef<HiraganaCharacter | null>(null);
   
   // Keep refs in sync with state
   useEffect(() => {
@@ -27,26 +25,30 @@ export default function Home() {
   }, [userInput]);
   
   useEffect(() => {
-    currentRomanizationRef.current = currentRomanization;
-  }, [currentRomanization]);
+    currentCharacterRef.current = currentCharacter;
+  }, [currentCharacter]);
   
   const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Check the user's answer - now defined with useCallback
+  // Check the user's answer
   const checkAnswer = useCallback(() => {
     // Use the refs to get current values
     const userInputValue = userInputRef.current;
-    const romanizationValue = currentRomanizationRef.current;
+    const character = currentCharacterRef.current;
+    
+    if (!character) return;
     
     // Compare the current values
     const userInputClean = userInputValue.trim().toLowerCase();
-    const correctAnswerClean = romanizationValue.trim().toLowerCase();
+    const correctAnswerClean = character.romanization.trim().toLowerCase();
     const correct = userInputClean === correctAnswerClean;
+    
+    // Report the result to the service
+    HiraganaService.reportResult(character, correct);
     
     // Update UI state based on result
     setIsCorrect(correct);
-    setShowFeedback(true);
     setBackgroundColor(correct ? "bg-green-100" : "bg-red-100");
     
     // Reset background color after flash
@@ -54,30 +56,22 @@ export default function Home() {
       setBackgroundColor("bg-white");
     }, 300);
     
-    // Hide feedback after a while for correct answers
-    if (correct) {
-      setTimeout(() => {
-        setShowFeedback(false);
-      }, 800);
-    }
-    
     // Move to next character
     setTimeout(nextCharacter, 0);
-  }, []); // No dependencies needed because we use refs
+  }, []);
   
-  // Get the next character - now defined with useCallback
+  // Get the next character
   const nextCharacter = useCallback(() => {
-    // Get a new random character
-    const { character, romanization } = HiraganaService.getRandomHiragana();
+    // Get the next character from the service
+    const character = HiraganaService.getNextCharacter();
     setCurrentCharacter(character);
-    setCurrentRomanization(romanization);
-    currentRomanizationRef.current = romanization; // Update ref immediately
+    currentCharacterRef.current = character;
     
     // Reset for next beat
     setUserInput("");
-    userInputRef.current = ""; // Update ref immediately
+    userInputRef.current = "";
     setTimeRemaining(100);
-    setShowFeedback(false);
+    setIsCorrect(null);
     
     // Focus the input field
     if (inputRef.current) {
@@ -105,10 +99,13 @@ export default function Home() {
         checkAnswer();
       }
     }, interval);
-  }, [beatDuration, checkAnswer]); // Only depends on beatDuration and checkAnswer
+  }, [beatDuration, checkAnswer]);
   
   // Start the game
   const startGame = useCallback(() => {
+    // Initialize the learning system
+    HiraganaService.initializeSystem();
+    
     setIsPlaying(true);
     nextCharacter();
   }, [nextCharacter]);
@@ -175,10 +172,19 @@ export default function Home() {
           {/* Rhythm indicator */}
           <Progress value={timeRemaining} className="w-full h-2 mb-8" />
 
-          {/* Character display - simplified without pulsing */}
+          {/* Character display */}
           <div className="text-9xl font-bold mb-8">
-            {currentCharacter}
+            {currentCharacter?.character}
           </div>
+          
+          {/* Show hint for stage 1 characters that were incorrect last time */}
+          {currentCharacter && 
+           currentCharacter.stage === 1 && 
+           !currentCharacter.lastCorrect && (
+            <div className="text-lg text-gray-500 mb-4">
+              {"(" + currentCharacter.romanization + ")"}
+            </div>
+          )}
 
           {/* Input field */}
           <div className="w-full relative">
@@ -200,18 +206,6 @@ export default function Home() {
               autoCapitalize="off"
               spellCheck="false"
             />
-
-            {/* Feedback area */}
-            {showFeedback && (
-              <div
-                className={cn(
-                  "absolute w-full text-center -bottom-10 text-lg font-medium transition-opacity duration-200",
-                  isCorrect ? "text-green-600" : "text-red-600",
-                )}
-              >
-                {isCorrect ? "Correct!" : currentRomanization}
-              </div>
-            )}
           </div>
         </div>
       )}
