@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { HiraganaService } from "./utils/hiraganaData";
 import Progress from "./components/Progress";
 import Button from "./components/Button";
@@ -17,35 +17,86 @@ export default function Home() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [backgroundColor, setBackgroundColor] = useState("bg-white");
   
+  // Use refs to track the latest values without triggering re-renders
+  const userInputRef = useRef("");
+  const currentRomanizationRef = useRef("");
+  
+  // Keep refs in sync with state
+  useEffect(() => {
+    userInputRef.current = userInput;
+  }, [userInput]);
+  
+  useEffect(() => {
+    currentRomanizationRef.current = currentRomanization;
+  }, [currentRomanization]);
+  
   const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Start the game
-  const startGame = () => {
-    setIsPlaying(true);
-    nextCharacter();
-    if (inputRef.current) {
-      inputRef.current.focus();
+  // Check the user's answer - now defined with useCallback
+  const checkAnswer = useCallback(() => {
+    // Use the refs to get current values
+    const userInputValue = userInputRef.current;
+    const romanizationValue = currentRomanizationRef.current;
+    
+    console.log("Checking answer with:", {
+      userInput: userInputValue,
+      romanization: romanizationValue
+    });
+    
+    // Compare the current values
+    const userInputClean = userInputValue.trim().toLowerCase();
+    const correctAnswerClean = romanizationValue.trim().toLowerCase();
+    const correct = userInputClean === correctAnswerClean;
+    
+    console.log("Answer is correct:", correct);
+    
+    // Update UI state based on result
+    setIsCorrect(correct);
+    setShowFeedback(true);
+    setBackgroundColor(correct ? "bg-green-100" : "bg-red-100");
+    
+    // Reset background color after flash
+    setTimeout(() => {
+      setBackgroundColor("bg-white");
+    }, 300);
+    
+    // Hide feedback after a while for correct answers
+    if (correct) {
+      setTimeout(() => {
+        setShowFeedback(false);
+      }, 800);
     }
-  };
+    
+    // Move to next character
+    setTimeout(nextCharacter, 0);
+  }, []); // No dependencies needed because we use refs
   
-  // Get the next character
-  const nextCharacter = () => {
+  // Get the next character - now defined with useCallback
+  const nextCharacter = useCallback(() => {
     // Get a new random character
     const { character, romanization } = HiraganaService.getRandomHiragana();
     setCurrentCharacter(character);
     setCurrentRomanization(romanization);
+    currentRomanizationRef.current = romanization; // Update ref immediately
     
     // Reset for next beat
-    // setUserInput("");
+    setUserInput("");
+    userInputRef.current = ""; // Update ref immediately
     setTimeRemaining(100);
     setShowFeedback(false);
     
-    // Start the timer
+    // Focus the input field
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+    
+    // Clear any existing timer
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
     
+    // Start new timer
     const interval = 100; // Update every 100ms
     const steps = beatDuration / interval;
     let counter = 0;
@@ -61,50 +112,20 @@ export default function Home() {
         checkAnswer();
       }
     }, interval);
-  };
+  }, [beatDuration, checkAnswer]); // Only depends on beatDuration and checkAnswer
   
-  // Check the user's answer
-  const checkAnswer = () => {
-    // Store current values in local variables to ensure they don't get cleared
-    // before the comparison happens
-    const currentInputValue = userInput;
-    const currentRomanizationValue = currentRomanization;
-    
-    // Improved comparison with strict equality check
-    const userInputClean = currentInputValue.trim().toLowerCase();
-    const correctAnswerClean = currentRomanizationValue.trim().toLowerCase();
-    const correct = userInputClean === correctAnswerClean;
-    
-    // Set the correct state before moving to the next character
-    setIsCorrect(correct);
-    setShowFeedback(true);
-    
-    // Flash background color based on correctness
-    setBackgroundColor(correct ? "bg-green-100" : "bg-red-100");
-    
-    // Reset background color after a brief flash
-    setTimeout(() => {
-      setBackgroundColor("bg-white");
-    }, 300);
-    
-    // Hide feedback after a while (only relevant for correct answers)
-    if (correct) {
-      setTimeout(() => {
-        setShowFeedback(false);
-      }, 800);
-    }
-    
-    // Move to next character with slight delay to ensure state updates
-    setTimeout(() => {
-      nextCharacter();
-    }, 0);
-  };
+  // Start the game
+  const startGame = useCallback(() => {
+    setIsPlaying(true);
+    nextCharacter();
+  }, [nextCharacter]);
   
   // Handle input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value;
     setUserInput(input);
-  };
+    // userInputRef is updated via the useEffect
+  }, []);
   
   // Clean up timer on unmount
   useEffect(() => {
